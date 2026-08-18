@@ -2,16 +2,12 @@ import regeneratorRuntime from 'regenerator-runtime/runtime'
 import Vue from 'vue'
 import App from './App.vue'
 import { createProvider } from './vue-apollo'
-
-if (typeof window !== 'undefined') {
-  window.regeneratorRuntime = regeneratorRuntime
-}
-if (typeof global !== 'undefined') {
-  global.regeneratorRuntime = regeneratorRuntime
-}
+import { exposeGlobal } from './utils/runtime'
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
+
+exposeGlobal('regeneratorRuntime', regeneratorRuntime)
 
 // Install BootstrapVue
 Vue.use(BootstrapVue)
