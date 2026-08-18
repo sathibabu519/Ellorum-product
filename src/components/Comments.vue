@@ -20,7 +20,7 @@
       <b-card-group deck v-for="comment in comments" :key="comment.id">
         <b-card
           :title="comment.name"
-          :img-src="comment.thumbnailUrl"
+          :img-src="safeImageUrl(comment.thumbnailUrl)"
           img-height="150"
           img-width="50"
           img-alt="Image"
@@ -96,17 +96,16 @@ export default {
   },
 
   methods: {
+    safeImageUrl(url) {
+      return typeof url === "string" && /^https?:\/\//i.test(url) ? url : null;
+    },
     search_text() {
-      var inside = this;
-      this.comments = this.comments_data.filter(function(product) {
-        if (
-          product.name
-            .toLowerCase()
-            .indexOf(inside.search.text.toLowerCase()) != "-1"
-        ) {
-          return product;
-        }
-      });
+      const needle = String(this.search.text || "").toLowerCase();
+      this.comments = this.comments_data.filter((product) =>
+        String(product.name || "")
+          .toLowerCase()
+          .includes(needle)
+      );
     },
     sort(searched_text) {
       if (searched_text) {
