@@ -5,6 +5,7 @@ import {
   createApolloClient,
   restartWebsockets,
 } from 'vue-cli-plugin-apollo/graphql-client'
+import { logError } from './utils/logger'
 
 // Install the vue plugin
 Vue.use(VueApollo)
@@ -69,17 +70,14 @@ export function createProvider(options = {}) {
       },
     },
     errorHandler(error) {
-      // eslint-disable-next-line no-console
-      console.error('[apollo] operation failed', error)
+      logError('Apollo operation failed', error)
       if (error.graphQLErrors) {
-        for (const graphQLError of error.graphQLErrors) {
-          // eslint-disable-next-line no-console
-          console.error('[apollo] graphql error', graphQLError)
-        }
+        error.graphQLErrors.forEach((graphQLError) => {
+          logError('GraphQL error', graphQLError)
+        })
       }
       if (error.networkError) {
-        // eslint-disable-next-line no-console
-        console.error('[apollo] network error', error.networkError)
+        logError('Network error', error.networkError)
       }
     },
   })
@@ -87,19 +85,22 @@ export function createProvider(options = {}) {
   return apolloProvider
 }
 
+async function resetApolloStore(apolloClient, context) {
+  if (apolloClient.wsClient) restartWebsockets(apolloClient.wsClient)
+  try {
+    await apolloClient.resetStore()
+  } catch (error) {
+    logError(`Error on cache reset (${context})`, error)
+    throw error
+  }
+}
+
 // Manually call this when user log in
 export async function onLogin(apolloClient, token) {
   if (typeof localStorage !== 'undefined' && token) {
     localStorage.setItem(AUTH_TOKEN, token)
   }
-  if (apolloClient.wsClient) restartWebsockets(apolloClient.wsClient)
-  try {
-    await apolloClient.resetStore()
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('[apollo] cache reset failed on login', error)
-    throw error
-  }
+  await resetApolloStore(apolloClient, 'login')
 }
 
 // Manually call this when user log out
@@ -107,12 +108,5 @@ export async function onLogout(apolloClient) {
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem(AUTH_TOKEN)
   }
-  if (apolloClient.wsClient) restartWebsockets(apolloClient.wsClient)
-  try {
-    await apolloClient.resetStore()
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('[apollo] cache reset failed on logout', error)
-    throw error
-  }
+  await resetApolloStore(apolloClient, 'logout')
 }

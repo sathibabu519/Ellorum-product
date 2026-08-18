@@ -43,6 +43,12 @@
 
 <script>
 import gql from "graphql-tag";
+import {
+  filterByField,
+  mergeById,
+  sortByField,
+} from "../utils/collections";
+import { logError } from "../utils/logger";
 export default {
   name: "Comments",
   props: {},
@@ -122,17 +128,14 @@ export default {
       this.comments = [];
       this.comments_data = [];
       this.errorMessage = `Unable to load products: ${error.message}`;
-      // eslint-disable-next-line no-console
-      console.error("[comments] failed to load products", error);
+      logError("Failed to load products", error);
     },
     search_text() {
-      var inside = this;
-      this.comments = this.comments_data.filter(function(product) {
-        const name = product.name || "";
-        return (
-          name.toLowerCase().indexOf(inside.search.text.toLowerCase()) !== -1
-        );
-      });
+      this.comments = filterByField(
+        this.comments_data,
+        "name",
+        this.search.text
+      );
     },
     sort(searched_text) {
       if (searched_text) {
@@ -143,25 +146,9 @@ export default {
     },
     input_text(comments) {
       if (this.search.filter == "a") {
-        this.comments = comments.sort(function(a, b) {
-          if (a.name < b.name) {
-            return -1;
-          }
-          if (a.name > b.name) {
-            return 1;
-          }
-          return 0;
-        });
+        this.comments = sortByField(comments, "name", "asc");
       } else if (this.search.filter == "d") {
-        this.comments = comments.sort(function(a, b) {
-          if (a.name < b.name) {
-            return 1;
-          }
-          if (a.name > b.name) {
-            return -1;
-          }
-          return 0;
-        });
+        this.comments = sortByField(comments, "name", "desc");
       }
     },
     combined_data() {
@@ -171,11 +158,7 @@ export default {
       if (!Array.isArray(this.photos_data.data)) {
         throw new Error("Photos response did not contain a data list");
       }
-      const comments_photos = this.comments.data.map((t1) => ({
-        ...t1,
-        ...this.photos_data.data.find((t2) => t2.id == t1.id),
-      }));
-      return comments_photos;
+      return mergeById(this.comments.data, this.photos_data.data);
     },
   },
 };
