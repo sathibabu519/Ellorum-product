@@ -1,5 +1,8 @@
 <template>
   <div class="home">
+    <b-alert :show="!!errorMessage" variant="danger" class="load_error">
+      {{ errorMessage }}
+    </b-alert>
     <div class="header_search">
       <b-form-input
         class="header_searchInput"
@@ -50,6 +53,7 @@ export default {
       photos_data: [],
       result: [],
       search: { filter: null, text: "" },
+      errorMessage: "",
       options: [
         { value: null, text: "Sort By" },
         { value: "a", text: "Ascending" },
@@ -86,26 +90,48 @@ export default {
         },
       },
       manual: true,
-      result({ data }) {
-        this.photos_data = { ...data.photos };
-        this.comments = { ...data.comments };
-        this.comments = this.combined_data();
-        this.comments_data = this.comments;
+      result({ data, error }) {
+        if (error) {
+          this.report_error(error);
+          return;
+        }
+        if (!data || !data.comments || !data.photos) {
+          this.report_error(
+            new Error("Response did not contain comments and photos")
+          );
+          return;
+        }
+        try {
+          this.photos_data = { ...data.photos };
+          this.comments = { ...data.comments };
+          this.comments = this.combined_data();
+          this.comments_data = this.comments;
+          this.errorMessage = "";
+        } catch (mergeError) {
+          this.report_error(mergeError);
+        }
+      },
+      error(error) {
+        this.report_error(error);
       },
     },
   },
 
   methods: {
+    report_error(error) {
+      this.comments = [];
+      this.comments_data = [];
+      this.errorMessage = `Unable to load products: ${error.message}`;
+      // eslint-disable-next-line no-console
+      console.error("[comments] failed to load products", error);
+    },
     search_text() {
       var inside = this;
       this.comments = this.comments_data.filter(function(product) {
-        if (
-          product.name
-            .toLowerCase()
-            .indexOf(inside.search.text.toLowerCase()) != "-1"
-        ) {
-          return product;
-        }
+        const name = product.name || "";
+        return (
+          name.toLowerCase().indexOf(inside.search.text.toLowerCase()) !== -1
+        );
       });
     },
     sort(searched_text) {
@@ -139,6 +165,12 @@ export default {
       }
     },
     combined_data() {
+      if (!Array.isArray(this.comments.data)) {
+        throw new Error("Comments response did not contain a data list");
+      }
+      if (!Array.isArray(this.photos_data.data)) {
+        throw new Error("Photos response did not contain a data list");
+      }
       const comments_photos = this.comments.data.map((t1) => ({
         ...t1,
         ...this.photos_data.data.find((t2) => t2.id == t1.id),

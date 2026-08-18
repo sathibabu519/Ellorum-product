@@ -20,6 +20,25 @@ Vue.use(IconsPlugin)
 
 Vue.config.productionTip = false
 
+Vue.config.errorHandler = (error, vm, info) => {
+  // eslint-disable-next-line no-console
+  console.error(
+    `[vue] error in ${info} of <${(vm && vm.$options.name) || 'anonymous'}>`,
+    error,
+  )
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    // eslint-disable-next-line no-console
+    console.error('[app] unhandled promise rejection', event.reason)
+  })
+  window.addEventListener('error', (event) => {
+    // eslint-disable-next-line no-console
+    console.error('[app] uncaught error', event.error || event.message)
+  })
+}
+
 new Vue({
   apolloProvider: createProvider(),
   render: (h) => h(App),
