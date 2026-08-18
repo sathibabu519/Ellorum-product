@@ -1,5 +1,8 @@
 <template>
   <div class="home">
+    <b-alert :show="!!errorMessage" variant="danger" class="load_error">
+      {{ errorMessage }}
+    </b-alert>
     <div class="header_search">
       <b-form-input
         class="header_searchInput"
@@ -45,6 +48,7 @@ import {
   mergeById,
   sortByField,
 } from "../utils/collections";
+import { logError } from "../utils/logger";
 export default {
   name: "Comments",
   props: {},
@@ -55,6 +59,7 @@ export default {
       photos_data: [],
       result: [],
       search: { filter: null, text: "" },
+      errorMessage: "",
       options: [
         { value: null, text: "Sort By" },
         { value: "a", text: "Ascending" },
@@ -91,16 +96,40 @@ export default {
         },
       },
       manual: true,
-      result({ data }) {
-        this.photos_data = { ...data.photos };
-        this.comments = { ...data.comments };
-        this.comments = this.combined_data();
-        this.comments_data = this.comments;
+      result({ data, error }) {
+        if (error) {
+          this.report_error(error);
+          return;
+        }
+        if (!data || !data.comments || !data.photos) {
+          this.report_error(
+            new Error("Response did not contain comments and photos")
+          );
+          return;
+        }
+        try {
+          this.photos_data = { ...data.photos };
+          this.comments = { ...data.comments };
+          this.comments = this.combined_data();
+          this.comments_data = this.comments;
+          this.errorMessage = "";
+        } catch (mergeError) {
+          this.report_error(mergeError);
+        }
+      },
+      error(error) {
+        this.report_error(error);
       },
     },
   },
 
   methods: {
+    report_error(error) {
+      this.comments = [];
+      this.comments_data = [];
+      this.errorMessage = `Unable to load products: ${error.message}`;
+      logError("Failed to load products", error);
+    },
     search_text() {
       this.comments = filterByField(
         this.comments_data,
@@ -123,6 +152,12 @@ export default {
       }
     },
     combined_data() {
+      if (!Array.isArray(this.comments.data)) {
+        throw new Error("Comments response did not contain a data list");
+      }
+      if (!Array.isArray(this.photos_data.data)) {
+        throw new Error("Photos response did not contain a data list");
+      }
       return mergeById(this.comments.data, this.photos_data.data);
     },
   },

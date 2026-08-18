@@ -5,7 +5,7 @@ import {
   createApolloClient,
   restartWebsockets,
 } from 'vue-cli-plugin-apollo/graphql-client'
-import { logError, logWarning } from './utils/logger'
+import { logError } from './utils/logger'
 
 // Install the vue plugin
 Vue.use(VueApollo)
@@ -70,7 +70,15 @@ export function createProvider(options = {}) {
       },
     },
     errorHandler(error) {
-      logError('Error', error)
+      logError('Apollo operation failed', error)
+      if (error.graphQLErrors) {
+        error.graphQLErrors.forEach((graphQLError) => {
+          logError('GraphQL error', graphQLError)
+        })
+      }
+      if (error.networkError) {
+        logError('Network error', error.networkError)
+      }
     },
   })
 
@@ -81,8 +89,9 @@ async function resetApolloStore(apolloClient, context) {
   if (apolloClient.wsClient) restartWebsockets(apolloClient.wsClient)
   try {
     await apolloClient.resetStore()
-  } catch (e) {
-    logWarning(`Error on cache reset (${context})`, e)
+  } catch (error) {
+    logError(`Error on cache reset (${context})`, error)
+    throw error
   }
 }
 

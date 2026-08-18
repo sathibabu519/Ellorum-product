@@ -4,10 +4,10 @@ const WARNING_STYLE = 'color: orange;'
 
 export function logError(label, error) {
   // eslint-disable-next-line no-console
-  console.log(`%c${label}`, ERROR_BADGE_STYLE, error && error.message)
+  console.error(`%c${label}`, ERROR_BADGE_STYLE, error)
 }
 
 export function logWarning(label, error) {
   // eslint-disable-next-line no-console
-  console.log(`%c${label}`, WARNING_STYLE, error && error.message)
+  console.warn(`%c${label}`, WARNING_STYLE, error)
 }
