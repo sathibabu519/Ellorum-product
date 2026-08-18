@@ -4,9 +4,10 @@ node_modules
 /coverage
 
 
-# local env files
-.env.local
-.env.*.local
+# env files (may contain secrets)
+.env
+.env.*
+!.env.example
 
 # Log files
 npm-debug.log*

@@ -20,7 +20,7 @@
       <b-card-group deck v-for="comment in comments" :key="comment.id">
         <b-card
           :title="comment.name"
-          :img-src="comment.thumbnailUrl"
+          :img-src="safeImageUrl(comment.thumbnailUrl)"
           img-height="150"
           img-width="50"
           img-alt="Image"
@@ -101,6 +101,9 @@ export default {
   },
 
   methods: {
+    safeImageUrl(url) {
+      return typeof url === "string" && /^https?:\/\//i.test(url) ? url : null;
+    },
     search_text() {
       this.comments = filterByField(
         this.comments_data,

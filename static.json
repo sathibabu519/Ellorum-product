@@ -1,7 +1,18 @@
 {
   "root": "dist",
   "clean_urls": true,
+  "https_only": true,
   "routes": {
     "/**": "index.html"
+  },
+  "headers": {
+    "/**": {
+      "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://graphqlzero.almansi.me; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "geolocation=(), microphone=(), camera=()"
+    }
   }
 }
